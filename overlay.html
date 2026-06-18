@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  width: 100vw; height: 100vh;
+  background: transparent;
+  overflow: hidden;
+  user-select: none;
+}
+
+.p-panel {
+  position: absolute;
+  transform: translateX(-50%);
+  text-align: center;
+  background: rgba(6, 8, 14, 0.85);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 6px;
+  padding: 4px 10px 5px;
+  font-family: 'Consolas', 'Segoe UI', monospace;
+  white-space: nowrap;
+  pointer-events: none;
+  display: none;
+}
+
+.p-nick {
+  font-size: 10px;
+  color: #6b7280;
+  margin-bottom: 3px;
+  max-width: 130px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.p-rp {
+  font-size: 14px;
+  font-weight: 700;
+  color: #e2e8f0;
+}
+.p-badge {
+  font-size: 11px;
+  font-weight: 700;
+  margin-left: 5px;
+}
+.p-badge.ascending   { color: #4ade80; }
+.p-badge.declining   { color: #f87171; }
+.p-badge.converged   { color: #60a5fa; }
+.p-badge.insufficient { color: #4b5563; }
+
+#win-box {
+  position: absolute;
+  left: 50%;
+  top: 47%;
+  transform: translate(-50%, -50%);
+  background: rgba(6, 8, 14, 0.90);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 10px;
+  padding: 10px 24px 12px;
+  text-align: center;
+  font-family: 'Consolas', monospace;
+  pointer-events: none;
+  display: none;
+  min-width: 180px;
+}
+#win-label {
+  font-size: 10px;
+  color: #6b7280;
+  letter-spacing: 1.5px;
+  margin-bottom: 4px;
+}
+#win-prob {
+  font-size: 46px;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+#win-avgs {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+}
+#win-t1 { color: #60a5fa; }
+#win-t2 { color: #f87171; }
+#win-vs { color: #374151; }
+
+#close-btn {
+  position: absolute;
+  top: 14px;
+  right: 18px;
+  color: rgba(255,255,255,0.25);
+  font-size: 16px;
+  cursor: pointer;
+  background: rgba(0,0,0,0.45);
+  border-radius: 4px;
+  padding: 2px 9px;
+  pointer-events: auto;
+  font-family: sans-serif;
+}
+#close-btn:hover { color: #f87171; }
+
+.spinner {
+  display: inline-block;
+  width: 10px; height: 10px;
+  border: 1.5px solid #1f2937;
+  border-top-color: #60a5fa;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  vertical-align: middle;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<span id="close-btn" onclick="overlay.close()">✕</span>
+
+<div id="win-box">
+  <div id="win-label">기대승률</div>
+  <div id="win-prob"></div>
+  <div id="win-avgs">
+    <span id="win-t1"></span>
+    <span id="win-vs">vs</span>
+    <span id="win-t2"></span>
+  </div>
+</div>
+
+<script>
+// screenshot.js 기준: xMin=31%, xMax=86%, 5구역 균등
+const CARD_X = [36.5, 47.5, 58.5, 69.5, 80.5]; // % of screen width
+const T1_Y = 42; // % — 팀1 닉네임 행(~38.5%) 바로 아래
+const T2_Y = 79; // % — 팀2 닉네임 행(~85%) 바로 위
+
+const panels = { team1: [], team2: [] };
+
+function makePanels(teamKey, yPct) {
+  for (let i = 0; i < 5; i++) {
+    const el = document.createElement('div');
+    el.className = 'p-panel';
+    el.style.left = CARD_X[i] + '%';
+    el.style.top = yPct + '%';
+
+    const nickEl = document.createElement('div');
+    nickEl.className = 'p-nick';
+
+    const rpRow = document.createElement('div');
+    const rpEl = document.createElement('span');
+    rpEl.className = 'p-rp';
+    const badgeEl = document.createElement('span');
+    badgeEl.className = 'p-badge';
+    rpRow.append(rpEl, badgeEl);
+
+    el.append(nickEl, rpRow);
+    document.body.appendChild(el);
+    panels[teamKey].push({ el, nickEl, rpEl, badgeEl });
+  }
+}
+
+makePanels('team1', T1_Y);
+makePanels('team2', T2_Y);
+
+overlay.onTeams(({ team1, team2 }) => {
+  document.getElementById('win-box').style.display = 'none';
+
+  const init = (teamKey, nicks) => {
+    panels[teamKey].forEach((p, i) => {
+      const nick = nicks[i] ?? '';
+      if (!nick) { p.el.style.display = 'none'; return; }
+      p.el.style.display = 'block';
+      p.nickEl.textContent = nick;
+      p.rpEl.innerHTML = '<span class="spinner"></span>';
+      p.badgeEl.textContent = '';
+      p.badgeEl.className = 'p-badge';
+    });
+  };
+  init('team1', team1);
+  init('team2', team2);
+});
+
+overlay.onEstimates(({ estimates, winPred }) => {
+  if (winPred) {
+    const box = document.getElementById('win-box');
+    const probEl = document.getElementById('win-prob');
+    const p = winPred.prob;
+    probEl.textContent = p + '%';
+    probEl.style.color = p >= 60 ? '#4ade80' : p <= 40 ? '#f87171' : '#e2e8f0';
+    document.getElementById('win-t1').textContent = '아군 ' + winPred.t1Avg;
+    document.getElementById('win-t2').textContent = '적군 ' + winPred.t2Avg;
+    box.style.display = 'block';
+  }
+
+  const allPanels = [
+    ...panels.team1,
+    ...panels.team2,
+  ];
+
+  for (const { el, nickEl, rpEl, badgeEl } of allPanels) {
+    const nick = nickEl.textContent;
+    if (!nick) continue;
+    const data = estimates[nick];
+    el.style.display = 'block';
+
+    if (!data?.ok) {
+      rpEl.textContent = '?';
+      badgeEl.textContent = '-';
+      badgeEl.className = 'p-badge insufficient';
+      continue;
+    }
+
+    const cur = data.currentRp ?? 0;
+    const est = data.estimatedSkillRp ?? cur;
+    rpEl.textContent = est !== cur ? `${cur}→${est}` : String(cur);
+
+    const modeMap = {
+      ascending:    ['ascending',    '↑'],
+      declining:    ['declining',    '↓'],
+      converged:    ['converged',    '●'],
+      insufficient: ['insufficient', '-'],
+    };
+    const [cls, label] = modeMap[data.components?.mode] ?? ['insufficient', '-'];
+    badgeEl.className = `p-badge ${cls}`;
+    badgeEl.textContent = label;
+  }
+});
+
+document.addEventListener('mousemove', e => {
+  const el = document.elementFromPoint(e.clientX, e.clientY);
+  overlay.setClickthrough(!el?.closest('#close-btn'));
+});
+</script>
+</body>
+</html>
