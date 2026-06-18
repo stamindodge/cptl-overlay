@@ -1,6 +1,6 @@
 {
   "name": "@cptl/electron",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "private": true,
   "description": "Cyphers loading screen overlay",
   "main": "src/main.js",
@@ -22,6 +22,7 @@
     "asar": true,
     "files": [
       "src/**/*",
+      "assets/**/*",
       "overlay.html",
       "package.json"
     ],

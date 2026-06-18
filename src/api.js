@@ -43,4 +43,21 @@ async function predict(workerUrl, team1, team2) {
   return resp.json();
 }
 
-module.exports = { parseScreenshot, predict };
+/**
+ * @typedef {{ date: string, result: string, characterImg: string|null }} MatchSummary
+ */
+
+/**
+ * @param {string} workerUrl
+ * @param {string} nickname
+ * @returns {Promise<{ ok: boolean, matches: MatchSummary[] }>}
+ */
+async function fetchMatches(workerUrl, nickname) {
+  const resp = await fetch(`${workerUrl}/matches?nickname=${encodeURIComponent(nickname)}`, {
+    signal: AbortSignal.timeout(15000),
+  });
+  if (!resp.ok) throw new Error(`matches ${resp.status}`);
+  return resp.json();
+}
+
+module.exports = { parseScreenshot, predict, fetchMatches };

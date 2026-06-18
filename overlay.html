@@ -4,6 +4,44 @@
 <meta charset="UTF-8">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --panel-bg: rgba(6, 8, 14, 0.85);
+  --panel-border: rgba(255,255,255,0.10);
+  --box-bg: rgba(6, 8, 14, 0.90);
+  --box-border: rgba(255,255,255,0.12);
+  --text-muted: #6b7280;
+  --text-primary: #e2e8f0;
+  --text-secondary: #9ca3af;
+  --accent-up: #4ade80;
+  --accent-down: #f87171;
+  --accent-neutral: #60a5fa;
+  --accent-dim: #4b5563;
+  --vs-dim: #374151;
+}
+
+html[data-theme="purple"] {
+  --accent-neutral: #a78bfa;
+  --panel-border: rgba(167,139,250,0.18);
+  --box-border: rgba(167,139,250,0.22);
+  --vs-dim: #4c3a78;
+}
+
+html[data-theme="mono"] {
+  --panel-bg: rgba(10, 10, 10, 0.88);
+  --panel-border: rgba(255,255,255,0.08);
+  --box-bg: rgba(10, 10, 10, 0.92);
+  --box-border: rgba(255,255,255,0.10);
+  --text-muted: #9ca3af;
+  --text-primary: #f3f4f6;
+  --text-secondary: #d1d5db;
+  --accent-up: #e5e7eb;
+  --accent-down: #9ca3af;
+  --accent-neutral: #d1d5db;
+  --accent-dim: #4b5563;
+  --vs-dim: #4b5563;
+}
+
 html, body {
   width: 100vw; height: 100vh;
   background: transparent;
@@ -15,8 +53,8 @@ html, body {
   position: absolute;
   transform: translateX(-50%);
   text-align: center;
-  background: rgba(6, 8, 14, 0.85);
-  border: 1px solid rgba(255,255,255,0.10);
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
   border-radius: 6px;
   padding: 4px 10px 5px;
   font-family: 'Consolas', 'Segoe UI', monospace;
@@ -25,36 +63,48 @@ html, body {
   display: none;
 }
 
-.p-nick {
-  font-size: 10px;
-  color: #6b7280;
-  margin-bottom: 3px;
-  max-width: 130px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.p-matches {
+  display: flex;
+  margin-top: 4px;
+  gap: 2px;
+  justify-content: center;
 }
-.p-rp {
-  font-size: 14px;
+.p-match-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 4px;
+  border: 2px solid var(--accent-dim);
+  object-fit: cover;
+}
+.p-match-icon.win  { border-color: var(--accent-up); }
+.p-match-icon.lose { border-color: var(--accent-down); }
+
+/* 실제 게임 카드에 이미 닉네임이 표시되므로 중복 표시 안 함 — onMatches/onEstimates의
+   닉네임 매칭용으로 textContent는 그대로 쓰되 화면엔 숨김 */
+.p-nick {
+  display: none;
+}
+.p-rp-cur {
+  font-size: 18px;
   font-weight: 700;
-  color: #e2e8f0;
+  color: var(--text-primary);
 }
 .p-badge {
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 700;
   margin-left: 5px;
 }
-.p-badge.ascending   { color: #4ade80; }
-.p-badge.declining   { color: #f87171; }
-.p-badge.converged   { color: #60a5fa; }
-.p-badge.insufficient { color: #4b5563; }
+.p-badge.ascending   { color: var(--accent-up); }
+.p-badge.declining   { color: var(--accent-down); }
+.p-badge.converged   { color: var(--accent-neutral); }
+.p-badge.insufficient { color: var(--accent-dim); }
 
 #win-box {
   position: absolute;
-  left: 50%;
-  top: 47%;
+  /* 위치는 JS의 LAYOUT.winBox에서 설정 — 튜닝 값을 한 군데(script 상단)로 모으기 위함 */
   transform: translate(-50%, -50%);
-  background: rgba(6, 8, 14, 0.90);
-  border: 1px solid rgba(255,255,255,0.12);
+  background: var(--box-bg);
+  border: 1px solid var(--box-border);
   border-radius: 10px;
   padding: 10px 24px 12px;
   text-align: center;
@@ -64,8 +114,8 @@ html, body {
   min-width: 180px;
 }
 #win-label {
-  font-size: 10px;
-  color: #6b7280;
+  font-size: 14px;
+  color: var(--text-muted);
   letter-spacing: 1.5px;
   margin-bottom: 4px;
 }
@@ -80,11 +130,11 @@ html, body {
   justify-content: center;
   align-items: center;
   gap: 10px;
-  font-size: 11px;
+  font-size: 16px;
 }
-#win-t1 { color: #60a5fa; }
-#win-t2 { color: #f87171; }
-#win-vs { color: #374151; }
+#win-t1 { color: var(--accent-down); }
+#win-t2 { color: var(--accent-neutral); }
+#win-vs { color: var(--vs-dim); }
 
 #close-btn {
   position: absolute;
@@ -99,13 +149,13 @@ html, body {
   pointer-events: auto;
   font-family: sans-serif;
 }
-#close-btn:hover { color: #f87171; }
+#close-btn:hover { color: var(--accent-down); }
 
 .spinner {
   display: inline-block;
   width: 10px; height: 10px;
   border: 1.5px solid #1f2937;
-  border-top-color: #60a5fa;
+  border-top-color: var(--accent-neutral);
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
   vertical-align: middle;
@@ -121,62 +171,106 @@ html, body {
   <div id="win-label">기대승률</div>
   <div id="win-prob"></div>
   <div id="win-avgs">
-    <span id="win-t1"></span>
-    <span id="win-vs">vs</span>
     <span id="win-t2"></span>
+    <span id="win-vs">vs</span>
+    <span id="win-t1"></span>
   </div>
 </div>
 
 <script>
-// screenshot.js 기준: xMin=31%, xMax=86%, 5구역 균등
-const CARD_X = [36.5, 47.5, 58.5, 69.5, 80.5]; // % of screen width
-const T1_Y = 42; // % — 팀1 닉네임 행(~38.5%) 바로 아래
-const T2_Y = 79; // % — 팀2 닉네임 행(~85%) 바로 위
+// 화면 위치 튜닝 값 — 다 같이 모아둠(이전엔 일부가 CSS에, 일부가 여기 흩어져 있었음).
+// 카드 x좌표는 worker/screenshot.js 기준(xMin=31%, xMax=86%, 5구역 균등)과 맞춰야 함.
+const LAYOUT = {
+  cardX: [36.5, 47.5, 58.5, 69.5, 80.5], // % of screen width, 카드별 패널 위치
+  panelXOffsetPx: 7,    // 패널 전체를 오른쪽으로 살짝 이동
+  team1YPct: 24,        // % — 팀1 닉네임 행(~35.5%)보다 위쪽에 배치
+  team1YOffsetPx: 37,   // 얼굴 아이콘 한 칸 크기만큼 아래로 보정
+  team2YPct: 79,        // % — 팀2 닉네임 행(~85%) 바로 위
+  winBox: { left: 'calc(50% - 50px)', top: 'calc(52% - 19px)' }, // VS 그래픽과 안 겹치게 보정
+};
 
 const panels = { team1: [], team2: [] };
 
-function makePanels(teamKey, yPct) {
+function makePanels(teamKey, yPct, yOffsetPx = 0) {
   for (let i = 0; i < 5; i++) {
     const el = document.createElement('div');
     el.className = 'p-panel';
-    el.style.left = CARD_X[i] + '%';
-    el.style.top = yPct + '%';
+    el.style.left = `calc(${LAYOUT.cardX[i]}% + ${LAYOUT.panelXOffsetPx}px)`;
+    el.style.top = yOffsetPx ? `calc(${yPct}% + ${yOffsetPx}px)` : yPct + '%';
 
     const nickEl = document.createElement('div');
     nickEl.className = 'p-nick';
 
-    const rpRow = document.createElement('div');
-    const rpEl = document.createElement('span');
-    rpEl.className = 'p-rp';
+    const curEl = document.createElement('div');
+    curEl.className = 'p-rp-cur';
+    const rpTextEl = document.createElement('span');
     const badgeEl = document.createElement('span');
     badgeEl.className = 'p-badge';
-    rpRow.append(rpEl, badgeEl);
+    curEl.append(rpTextEl, badgeEl);
 
-    el.append(nickEl, rpRow);
+    const matchesEl = document.createElement('div');
+    matchesEl.className = 'p-matches';
+
+    el.append(nickEl, curEl, matchesEl);
     document.body.appendChild(el);
-    panels[teamKey].push({ el, nickEl, rpEl, badgeEl });
+    panels[teamKey].push({ el, nickEl, curEl, rpTextEl, badgeEl, matchesEl });
   }
 }
 
-makePanels('team1', T1_Y);
-makePanels('team2', T2_Y);
+function renderMatches(matchesEl, matches) {
+  matchesEl.innerHTML = '';
+  for (const m of matches.slice(0, 5)) {
+    const img = document.createElement('img');
+    img.className = 'p-match-icon ' + (m.result === 'win' ? 'win' : 'lose');
+    img.src = m.characterImg || '';
+    img.title = `${m.date} (${m.result === 'win' ? '승' : '패'})`;
+    matchesEl.appendChild(img);
+  }
+}
+
+makePanels('team1', LAYOUT.team1YPct, LAYOUT.team1YOffsetPx);
+makePanels('team2', LAYOUT.team2YPct);
+
+Object.assign(document.getElementById('win-box').style, LAYOUT.winBox);
+
+let lastTeamsKey = null;
 
 overlay.onTeams(({ team1, team2 }) => {
-  document.getElementById('win-box').style.display = 'none';
+  // 재시도 때마다 teams 이벤트가 다시 오는데, 팀 구성이 그대로면 승률 박스를 매번
+  // 숨겼다가 다시 보여줄 필요 없음 — 그게 깜빡임의 원인이었음. 실제로 구성이 바뀐 경우만 숨김.
+  const teamsKey = JSON.stringify([team1, team2]);
+  const teamsChanged = teamsKey !== lastTeamsKey;
+  lastTeamsKey = teamsKey;
+  if (teamsChanged) document.getElementById('win-box').style.display = 'none';
 
   const init = (teamKey, nicks) => {
     panels[teamKey].forEach((p, i) => {
       const nick = nicks[i] ?? '';
       if (!nick) { p.el.style.display = 'none'; return; }
+      // 재시도(불완전 파싱 재캡처) 때마다 teams 이벤트가 다시 오는데, 이미 같은 닉네임으로
+      // 표시 중인 슬롯까지 스피너로 리셋하면 매칭 성공한 사람까지 같이 깜빡임 — 닉네임이
+      // 바뀐(=새로 채워졌거나 다른 사람으로 바뀐) 슬롯만 초기화한다.
+      const unchanged = p.el.style.display === 'block' && p.nickEl.textContent === nick;
       p.el.style.display = 'block';
       p.nickEl.textContent = nick;
-      p.rpEl.innerHTML = '<span class="spinner"></span>';
+      if (unchanged) return;
+      p.rpTextEl.innerHTML = '<span class="spinner"></span>';
       p.badgeEl.textContent = '';
       p.badgeEl.className = 'p-badge';
+      p.matchesEl.innerHTML = '';
     });
   };
   init('team1', team1);
   init('team2', team2);
+});
+
+overlay.onMatches((matchesByNick) => {
+  const allPanels = [...panels.team1, ...panels.team2];
+  for (const { nickEl, matchesEl } of allPanels) {
+    const nick = nickEl.textContent;
+    if (!nick) continue;
+    renderMatches(matchesEl, matchesByNick[nick] ?? []);
+  }
 });
 
 overlay.onEstimates(({ estimates, winPred }) => {
@@ -185,9 +279,10 @@ overlay.onEstimates(({ estimates, winPred }) => {
     const probEl = document.getElementById('win-prob');
     const p = winPred.prob;
     probEl.textContent = p + '%';
-    probEl.style.color = p >= 60 ? '#4ade80' : p <= 40 ? '#f87171' : '#e2e8f0';
-    document.getElementById('win-t1').textContent = '아군 ' + winPred.t1Avg;
-    document.getElementById('win-t2').textContent = '적군 ' + winPred.t2Avg;
+    probEl.style.color = p >= 60 ? 'var(--accent-up)' : p <= 40 ? 'var(--accent-down)' : 'var(--text-primary)';
+    // team1=위쪽 줄(적군), team2=아래쪽 줄(아군) — 실제 게임 화면 배치 기준
+    document.getElementById('win-t1').textContent = '적군 ' + winPred.t1Avg;
+    document.getElementById('win-t2').textContent = '아군 ' + winPred.t2Avg;
     box.style.display = 'block';
   }
 
@@ -196,14 +291,18 @@ overlay.onEstimates(({ estimates, winPred }) => {
     ...panels.team2,
   ];
 
-  for (const { el, nickEl, rpEl, badgeEl } of allPanels) {
+  for (const { el, nickEl, rpTextEl, badgeEl } of allPanels) {
     const nick = nickEl.textContent;
     if (!nick) continue;
     const data = estimates[nick];
     el.style.display = 'block';
 
     if (!data?.ok) {
-      rpEl.textContent = '?';
+      // 추정(estimatedSkillRp)은 실패해도 현재 RP는 있을 수 있음 — 그럴 땐 "?(현재RP)"로 표시.
+      // 현재 RP까지 없으면 이유를 라벨로: 플레이어 자체를 못 찾음(인식실패) vs
+      // 찾았는데 전적/RP가 부족함(데이터없음).
+      rpTextEl.textContent = data?.currentRp != null ? `?(${data.currentRp})`
+        : data?.reason === 'not_found' ? '인식실패' : '데이터없음';
       badgeEl.textContent = '-';
       badgeEl.className = 'p-badge insufficient';
       continue;
@@ -211,7 +310,7 @@ overlay.onEstimates(({ estimates, winPred }) => {
 
     const cur = data.currentRp ?? 0;
     const est = data.estimatedSkillRp ?? cur;
-    rpEl.textContent = est !== cur ? `${cur}→${est}` : String(cur);
+    rpTextEl.textContent = `${est}(${cur})`;
 
     const modeMap = {
       ascending:    ['ascending',    '↑'],
@@ -228,6 +327,10 @@ overlay.onEstimates(({ estimates, winPred }) => {
 document.addEventListener('mousemove', e => {
   const el = document.elementFromPoint(e.clientX, e.clientY);
   overlay.setClickthrough(!el?.closest('#close-btn'));
+});
+
+overlay.onTheme((theme) => {
+  document.documentElement.setAttribute('data-theme', theme);
 });
 </script>
 </body>
